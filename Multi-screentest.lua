@@ -5,7 +5,7 @@ guirs = manager:machine().screens[":rscreen"]
 
 
 function main()
-guils:draw_box(0, 0, 64, 64, 0xff80000, 0xffffffff)
+guils:draw_box(0, 0, 64, 64, 0xFF800000, 0xffffffff)
 guils:draw_text(16, 16, "Left Screen")
 
 guims:draw_box(0, 0, 64, 64, 0xff008000, 0xffffffff)
