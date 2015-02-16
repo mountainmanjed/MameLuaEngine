@@ -25,7 +25,7 @@ x = adr + 0x2A
 adr = 0x204062
 local active = band(mem:read_u8(adr),0x80)/0x80
 local y = band(mem:read_i16(adr + 0x4A),0xFF80)/0x80
-local x = band(mem:read_i16(adr + 0x4C),0xFF80)/0x80
+local x = cordinate(adr + 0x4C)
 
 local boxpnt = mem:read_u32(adr + 0x0A)
 local cell = mem:read_u16(adr + 0x14)
@@ -77,6 +77,15 @@ gui:draw_box(x+y1,y+x1,x+y2,y+x2,fill,out)
 gui:draw_text(180,48,"Pair 1: " .. y1 .. ", " .. x1)
 gui:draw_text(180,64,"Pair 2: " .. y2 .. ", " .. x2)
 ]]
+end
+
+function cordinate(x)
+local val1 = band(mem:read_u16(x),0x007F)
+local val2 = mem:read_i16(x)
+local val3 = (val2 - val1)/0x80
+
+return val3
+
 end
 
 function hexval(val)
