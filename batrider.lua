@@ -5,54 +5,96 @@ gui = manager:machine().screens[":screen"]
 --Color format is T =transparency, R= red, G= Green, B = blue
 --so 0xTTRRGGBB
 --Hurt box
-hurtboxfill = 0xC0FF0000
+hurtboxfill = 0x60FF0000
 hurtboxoutline = 0xFFFFFF00
 --Collection Boxes
-colectboxfill = 0x00
+colectboxfill = 0xA0FF0000
 colectboutline = 0xFF00FFFF
+unk = 0xFFFFFFFF
+
+
+h = hurtboxoutline
+c = colectboutline
+u = unk
+--even if it isn't the actual ID 
+colors = {
+--  0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f
+	h,u,u,u,c,u,u,u,u,u,u,u,u,u,u,u,
+	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,
+	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,
+	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u
+}
+
+
 
 function main()
 camx = band(mem:read_i16(0x2034E2),0xFF80)/0x80
 
---[[
-Ingame Sprite Start 0x20869A, 72 offset
+--Sprites
+--spradr 0x20869A, 72 offset
+adr = 0x20869A - 0x72
 for a = 0,0x60,1 do
 adr = adr + 0x72
-x = adr + 0x2A
-]]
-
---Player 1 memory 0x204062
-adr = 0x204062
 local active = band(mem:read_u8(adr),0x80)/0x80
-local y = band(mem:read_i16(adr + 0x4A),0xFF80)/0x80
-local x = cordinate(adr + 0x4C)
+local y = band(mem:read_i16(adr + 0x2A),0xFF80)/0x80
+local x = band(mem:read_i16(adr + 0x2C),0xFF80)/0x80
+local boxpnt = mem:read_u32(adr + 0x1A)
 
-local boxpnt = mem:read_u32(adr + 0x0A)
-local cell = mem:read_u16(adr + 0x14)
-local cellp2 = cell + mem:read_u16(adr + 0x16)
+local hp = mem:read_u16(adr + 0x50)
+
+if active == 1 then
+boxes = 0
+	--LEAVE THIS COMMENTED OUT OR MAME WILL CRASH during gameplay
+	--gui:draw_text(y-8,x-camx,hp)
+	repeat boxes = boxes + 1
+	until mem:read_i16(boxpnt + (boxes * 8)) == 0x00
+	
+	
+	for nbox = 0,boxes-1,1 do
+		colbox(boxpnt+(nbox*8),y,x-camx)
+		
+	end
+	
+	drawaxis(y,x - camx,2,0xFFFFFFFF)
+end
+end
+
+
+--Players
+pladr =  0x204062 - 0x172
+
+for pl = 0,1,1 do
+
+pladr = pladr + 0x172
+local active = band(mem:read_u8(pladr),0x80)/0x80
+local y = band(mem:read_i16(pladr + 0x4A),0xFF80)/0x80
+local x = band(mem:read_i16(pladr + 0x4C),0xFF80)/0x80
+
+local boxpnt = mem:read_u32(pladr + 0x0A)
+local cell = mem:read_u16(pladr + 0x14)
+local frame = mem:read_u16(pladr + 0x16)
+local cellp2 = cell + frame
 local boxdata1 = mem:read_u16(boxpnt + cell)
 local boxdata2 = mem:read_u16(boxdata1 + boxpnt)
 local boxdata3 = boxdata2 + boxdata1 + boxpnt
 
 if active == 1 then
-gui:draw_text(8,16,"X,Y: " .. x .. ", ".. y)
-gui:draw_text(8,24,"BoxADR: " .. hexval(boxdata3))
+boxes = 0
 
---[[
-If bit 4 is flagged probably a collection box
-dividing by 0x80 won't work
-so either do a check before drawing and take it away
-or figure out how to keep the sign with a bit and
-]]
-	colbox(boxdata3,y,x-camx,hurtboxfill,hurtboxoutline)
-	--colbox(boxdata3+8,y,x-camx,0,0xFFFF0000)
-	--colbox(boxdata3+16,y,x-camx,0,0xFFFF0000)
-	--colbox(boxdata3+24,y,x-camx,0,0xFFFF0000)
+	gui:draw_text(8,8+(pl*8),hexval(boxdata3))
 
+	repeat boxes = boxes + 1
+	until mem:read_i16(boxdata3 + (boxes * 8)) == 0x00
 
-	drawaxis(y,x - camx,4,0xFFFFFFFF)
+	
+	for nbox = 0,boxes-1,1 do
+		colbox(boxdata3+(nbox*8),y,x-camx)
+		
 	end
-
+	
+	drawaxis(y,x - camx,2,0xFFFFFFFF)
+	end
+end
 end
 
 function drawaxis(x,y,l,color)
@@ -62,25 +104,37 @@ gui:draw_line(x,y+l,x,y-l,color)
 
 end
 
-function colbox(adr,x,y,fill,out)
-refy = mem:read_i16(adr)
-refx = mem:read_i16(adr + 0x04)
+function colbox(adr,x,y)
+id = band(mem:read_i16(adr + 0x06),0x003F)
 
-y1 = (mem:read_i16(adr+2)-refy)/0x80
-x1 = (mem:read_i16(adr + 0x06)-refx)/0x80
+mathx = (mem:read_i16(adr))
+mathy = (mem:read_i16(adr + 0x04))
 
-y2 = (mem:read_i16(adr+2)+refy)/0x80
-x2 = (mem:read_i16(adr + 0x06)+refx)/0x80
+basex = mem:read_i16(adr + 0x02)
+basey = mem:read_i16(adr + 0x06) - id
 
-gui:draw_box(x+y1,y+x1,x+y2,y+x2,fill,out)
+
+x1 = (basex-mathx)/0x80
+y1 = (basey-mathy)/0x80
+
+x2 = (basex+mathx)/0x80
+y2 = (basey+mathy)/0x80
+
+if mathx ~= 0 then
+gui:draw_box(x+x1,y+y1,x+x2,y+y2,0,colors[id+1])
+end
+
 --[[
-gui:draw_text(180,48,"Pair 1: " .. y1 .. ", " .. x1)
-gui:draw_text(180,64,"Pair 2: " .. y2 .. ", " .. x2)
-]]
+gui:draw_text(8,24,"Address: " .. hexval(adr))
+gui:draw_text(128,24,"X1: " .. x1 .. ", " .. x+x1)
+gui:draw_text(128,32,"Y1: " .. y1 .. ", " .. y+y1)
+gui:draw_text(128,40,"X2: " .. x2 .. ", " .. x+x2)
+gui:draw_text(128,48,"Y2: " .. y2 .. ", " .. y+y2)
+--]]
 end
 
 function cordinate(x)
-local val1 = band(mem:read_u16(x),0x007F)
+local val1 = band(mem:read_u16(x),0x003F)
 local val2 = mem:read_i16(x)
 local val3 = (val2 - val1)/0x80
 
