@@ -29,11 +29,11 @@ colors = {
 
 function main()
 camx = band(mem:read_i16(0x2034E2),0xFF80)/0x80
+baserank = mem:read_i16(0x20F9CE)
 
---Sprites
 --spradr 0x20869A, 72 offset
 adr = 0x20869A - 0x72
-for a = 0,0x60,1 do
+for a = 0,0x60,1 do --D31F6
 adr = adr + 0x72
 local active = band(mem:read_u8(adr),0x80)/0x80
 local y = band(mem:read_i16(adr + 0x2A),0xFF80)/0x80
@@ -44,8 +44,11 @@ local hp = mem:read_u16(adr + 0x50)
 
 if active == 1 then
 boxes = 0
-	--LEAVE THIS COMMENTED OUT OR MAME WILL CRASH during gameplay
-	--gui:draw_text(y-8,x-camx,hp)
+        if ((y-12) < (gui:width()-16)) then
+			if hp ~= 0 then
+			gui:draw_text(y-12,(x-camx)-24,"HP: " .. hp)
+			end
+		end
 	repeat boxes = boxes + 1
 	until mem:read_i16(boxpnt + (boxes * 8)) == 0x00
 	
@@ -54,7 +57,6 @@ boxes = 0
 		colbox(boxpnt+(nbox*8),y,x-camx)
 		
 	end
-	
 	drawaxis(y,x - camx,2,0xFFFFFFFF)
 end
 end
@@ -81,7 +83,7 @@ local boxdata3 = boxdata2 + boxdata1 + boxpnt
 if active == 1 then
 boxes = 0
 
-	gui:draw_text(8,8+(pl*8),hexval(boxdata3))
+	--gui:draw_text(8,8+(pl*8),hexval(boxdata3))
 
 	repeat boxes = boxes + 1
 	until mem:read_i16(boxdata3 + (boxes * 8)) == 0x00
@@ -95,6 +97,35 @@ boxes = 0
 	drawaxis(y,x - camx,2,0xFFFFFFFF)
 	end
 end
+
+--Rank Display
+--Largest Game Training on easy slow 12,533,800
+
+gui:draw_text(210,0,"Base: " .. baserank)
+--gui:draw_text(210,8,"Game: " .. gamerank)
+gamerank(0x20F9D0,210,10)
+
+--gui:draw_box()
+
+
+end
+
+function gamerank(adr,x,y)
+local u1 = band(mem:read_u8(adr+1),0xFC)/4
+local u2 = band(mem:read_u8(adr+2),0xFC)/4
+local u3 = mem:read_u8(adr+3)/4
+
+--
+gui:draw_box(x,y+0,x+64,y+2,0,0xFFFFFFFF)
+gui:draw_box(x,y+0,x+u1,y+2,0xFFFFFFFF,0)
+
+
+gui:draw_box(x,y+3,x+64,y+5,0,0xFFFFFFFF)
+gui:draw_box(x,y+3,x+u2,y+5,0xFFFFFFFF,0)
+
+gui:draw_box(x,y+6,x+64,y+8,0,0xFFFFFFFF)
+gui:draw_box(x,y+6,x+u3,y+8,0xFFFFFFFF,0)
+
 end
 
 function drawaxis(x,y,l,color)
