@@ -5,19 +5,18 @@ gui = manager:machine().screens[":screen"]
 --Color format is T =transparency, R= red, G= Green, B = blue
 --so 0xTTRRGGBB
 --Hurt box
-hurtboxfill = 0x60FF0000
 hurtboxoutline = 0xFFFFFF00
---Collection Boxes
-colectboxfill = 0xA0FF0000
 colectboutline = 0xFF00FFFF
 unk = 0xFFFFFFFF
+attack = 0xFFFF77FF
 
 
+a = attack
 h = hurtboxoutline
 c = colectboutline
 u = unk
 --even if it isn't the actual ID 
-colors = {
+plcolors = {
 --  0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f
 	h,u,u,u,c,u,u,u,u,u,u,u,u,u,u,u,
 	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,
@@ -25,40 +24,38 @@ colors = {
 	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u
 }
 
+encolors = {
+--  0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f
+	h,u,u,u,c,u,u,u,u,u,u,u,u,u,u,u,
+	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,
+	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,
+	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u
+}
 
+pjcolors = {
+--  0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f
+	a,u,u,u,c,u,u,u,u,u,u,u,u,u,u,u,
+	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,
+	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,
+	u,u,u,u,u,u,u,u,u,u,u,u,u,u,u,u
+}
 
 function main()
 camx = band(mem:read_i16(0x2034E2),0xFF80)/0x80
 baserank = mem:read_i16(0x20F9CE)
 
+--Player1 projectiles
+prjadr = 0x20478A - 0x4e
+for proj = 0,0x1,1 do
+prjadr = prjadr  + 0x4E
+other_sprites(prjadr,pjcolors)
+end
+
 --spradr 0x20869A, 72 offset
 adr = 0x20869A - 0x72
-for a = 0,0x60,1 do --D31F6
+for a = 0,0x5F,1 do
 adr = adr + 0x72
-local active = band(mem:read_u8(adr),0x80)/0x80
-local y = band(mem:read_i16(adr + 0x2A),0xFF80)/0x80
-local x = band(mem:read_i16(adr + 0x2C),0xFF80)/0x80
-local boxpnt = mem:read_u32(adr + 0x1A)
-
-local hp = mem:read_u16(adr + 0x50)
-
-if active == 1 then
-boxes = 0
-        if ((y-12) < (gui:width()-16)) then
-			if hp ~= 0 then
-			gui:draw_text(y-12,(x-camx)-24,"HP: " .. hp)
-			end
-		end
-	repeat boxes = boxes + 1
-	until mem:read_i16(boxpnt + (boxes * 8)) == 0x00
-	
-	
-	for nbox = 0,boxes-1,1 do
-		colbox(boxpnt+(nbox*8),y,x-camx)
-		
-	end
-	drawaxis(y,x - camx,2,0xFFFFFFFF)
-end
+other_sprites(adr,encolors)
 end
 
 
@@ -69,6 +66,7 @@ for pl = 0,1,1 do
 
 pladr = pladr + 0x172
 local active = band(mem:read_u8(pladr),0x80)/0x80
+local boxactive = band(mem:read_u8(pladr),0x02)/0x02
 local y = band(mem:read_i16(pladr + 0x4A),0xFF80)/0x80
 local x = band(mem:read_i16(pladr + 0x4C),0xFF80)/0x80
 
@@ -83,15 +81,14 @@ local boxdata3 = boxdata2 + boxdata1 + boxpnt
 if active == 1 then
 boxes = 0
 
-	--gui:draw_text(8,8+(pl*8),hexval(boxdata3))
-
 	repeat boxes = boxes + 1
 	until mem:read_i16(boxdata3 + (boxes * 8)) == 0x00
 
 	
 	for nbox = 0,boxes-1,1 do
-		colbox(boxdata3+(nbox*8),y,x-camx)
-		
+		if boxactive == 1 then
+			colbox(boxdata3+(nbox*8),y,x-camx,plcolors)
+		end
 	end
 	
 	drawaxis(y,x - camx,2,0xFFFFFFFF)
@@ -106,25 +103,58 @@ gui:draw_text(210,0,"Base: " .. baserank)
 gamerank(0x20F9D0,210,10)
 
 --gui:draw_box()
-
-
 end
 
 function gamerank(adr,x,y)
-local u1 = band(mem:read_u8(adr+1),0xFC)/4
-local u2 = band(mem:read_u8(adr+2),0xFC)/4
-local u3 = mem:read_u8(adr+3)/4
+local u1 = rsb(mem:read_u8(adr+1),2)
+local u2 = rsb(mem:read_u8(adr+2),2)
+local u3 = rsb(mem:read_u8(adr+3),2)
 
 --
+gui:draw_box(x,y+0,x+u1,y+2,0xFFFF0000,0)
 gui:draw_box(x,y+0,x+64,y+2,0,0xFFFFFFFF)
-gui:draw_box(x,y+0,x+u1,y+2,0xFFFFFFFF,0)
 
 
+gui:draw_box(x,y+3,x+u2,y+5,0xFFFFFF00,0)
 gui:draw_box(x,y+3,x+64,y+5,0,0xFFFFFFFF)
-gui:draw_box(x,y+3,x+u2,y+5,0xFFFFFFFF,0)
 
+gui:draw_box(x,y+6,x+u3,y+8,0xFF00FFFF,0)
 gui:draw_box(x,y+6,x+64,y+8,0,0xFFFFFFFF)
-gui:draw_box(x,y+6,x+u3,y+8,0xFFFFFFFF,0)
+
+end
+
+function other_sprites(adr,colortable)
+local active = band(mem:read_u8(adr),0x80)/0x80
+local boxactive = band(mem:read_u8(adr),0x02)/0x02
+local y = band(mem:read_i16(adr + 0x2A),0xFF80)/0x80
+local x = band(mem:read_i16(adr + 0x2C),0xFF80)/0x80
+local boxpnt = mem:read_u32(adr + 0x1A)
+
+local hp = mem:read_u16(adr + 0x50)
+
+if active == 1 then
+boxes = 0
+	if ((y) < (gui:width()-16)) then
+	--	gui:draw_text(y,(x-camx)-24,hexval(adr))
+	end
+--[[
+        if ((y-12) < (gui:width()-16)) then
+			if hp ~= 0 then
+				gui:draw_text(y-12,(x-camx)-24,"HP: " .. hp)
+			end
+		end
+--]]
+		repeat boxes = boxes + 1
+	until mem:read_i16(boxpnt + (boxes * 8)) == 0x00
+	
+	
+	for nbox = 0,boxes-1,1 do
+		if boxactive == 1 then
+		colbox(boxpnt+(nbox*8),y,x-camx,colortable)
+		end
+	end
+	drawaxis(y,x - camx,2,0xFFFFFFFF)
+end
 
 end
 
@@ -135,7 +165,7 @@ gui:draw_line(x,y+l,x,y-l,color)
 
 end
 
-function colbox(adr,x,y)
+function colbox(adr,x,y,colortable)
 id = band(mem:read_i16(adr + 0x06),0x003F)
 
 mathx = (mem:read_i16(adr))
@@ -152,25 +182,8 @@ x2 = (basex+mathx)/0x80
 y2 = (basey+mathy)/0x80
 
 if mathx ~= 0 then
-gui:draw_box(x+x1,y+y1,x+x2,y+y2,0,colors[id+1])
+gui:draw_box(x+x1,y+y1,x+x2,y+y2,0,colortable[id+1])
 end
-
---[[
-gui:draw_text(8,24,"Address: " .. hexval(adr))
-gui:draw_text(128,24,"X1: " .. x1 .. ", " .. x+x1)
-gui:draw_text(128,32,"Y1: " .. y1 .. ", " .. y+y1)
-gui:draw_text(128,40,"X2: " .. x2 .. ", " .. x+x2)
-gui:draw_text(128,48,"Y2: " .. y2 .. ", " .. y+y2)
---]]
-end
-
-function cordinate(x)
-local val1 = band(mem:read_u16(x),0x003F)
-local val2 = mem:read_i16(x)
-local val3 = (val2 - val1)/0x80
-
-return val3
-
 end
 
 function hexval(val)
@@ -182,4 +195,7 @@ function band(a,b)
 	return a&b
 end
 
-emu.sethook(main, "frame")
+function rsb(a,b)
+	return a>>b
+end
+emu.sethook(main,"frame")
