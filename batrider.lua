@@ -46,10 +46,17 @@ baserank = mem:read_i16(0x20F9CE)
 
 --Player1 projectiles
 prjadr = 0x20478A - 0x4e
-for proj = 0,0x1,1 do
+for proj = 0,0x40,1 do
 prjadr = prjadr  + 0x4E
 other_sprites(prjadr,pjcolors)
 end
+
+enpjadr = 0x20B15A - 0x40
+for enproj = 0,0x30,1 do
+enpjadr = enpjadr  + 0x40
+other_sprites(enpjadr,pjcolors)
+end
+
 
 --spradr 0x20869A, 72 offset
 adr = 0x20869A - 0x72
@@ -69,13 +76,13 @@ local active = band(mem:read_u8(pladr),0x80)/0x80
 local boxactive = band(mem:read_u8(pladr),0x02)/0x02
 local y = band(mem:read_i16(pladr + 0x4A),0xFF80)/0x80
 local x = band(mem:read_i16(pladr + 0x4C),0xFF80)/0x80
-
+local xa = 0
 local boxpnt = mem:read_u32(pladr + 0x0A)
 local cell = mem:read_u16(pladr + 0x14)
 local frame = mem:read_u16(pladr + 0x16)
 local cellp2 = cell + frame
 local boxdata1 = mem:read_u16(boxpnt + cell)
-local boxdata2 = mem:read_u16(boxdata1 + boxpnt)
+local boxdata2 = mem:read_u16(boxdata1 + boxpnt + frame)
 local boxdata3 = boxdata2 + boxdata1 + boxpnt
 
 if active == 1 then
@@ -87,7 +94,7 @@ boxes = 0
 	
 	for nbox = 0,boxes-1,1 do
 		if boxactive == 1 then
-			colbox(boxdata3+(nbox*8),y,x-camx,plcolors)
+			colbox(boxdata3+(nbox*8),y,x-camx,xa,plcolors)
 		end
 	end
 	
@@ -97,7 +104,6 @@ end
 
 --Rank Display
 --Largest Game Training on easy slow 12,533,800
-
 gui:draw_text(210,0,"Base: " .. baserank)
 --gui:draw_text(210,8,"Game: " .. gamerank)
 gamerank(0x20F9D0,210,10)
@@ -126,8 +132,11 @@ end
 function other_sprites(adr,colortable)
 local active = band(mem:read_u8(adr),0x80)/0x80
 local boxactive = band(mem:read_u8(adr),0x02)/0x02
+local boxactive2 =  band(mem:read_u8(adr),0x08)/0x08
 local y = band(mem:read_i16(adr + 0x2A),0xFF80)/0x80
 local x = band(mem:read_i16(adr + 0x2C),0xFF80)/0x80
+local xasubpixels = band(mem:read_i16(adr + 0x36),0x7F)
+local xa = (mem:read_i16(adr + 0x36) - xasubpixels)/0x80
 local boxpnt = mem:read_u32(adr + 0x1A)
 
 local hp = mem:read_u16(adr + 0x50)
@@ -149,8 +158,8 @@ boxes = 0
 	
 	
 	for nbox = 0,boxes-1,1 do
-		if boxactive == 1 then
-		colbox(boxpnt+(nbox*8),y,x-camx,colortable)
+		if boxactive == 1 or boxactive2 == 1 then
+		colbox(boxpnt+(nbox*8),y,x-camx,xa,colortable)
 		end
 	end
 	drawaxis(y,x - camx,2,0xFFFFFFFF)
@@ -165,21 +174,23 @@ gui:draw_line(x,y+l,x,y-l,color)
 
 end
 
-function colbox(adr,x,y,colortable)
-id = band(mem:read_i16(adr + 0x06),0x003F)
+function colbox(adr,x,y,xaccel,colortable)
+local id = band(mem:read_i16(adr + 0x06),0x003F)
 
-mathx = (mem:read_i16(adr))
-mathy = (mem:read_i16(adr + 0x04))
+x = x - xaccel
 
-basex = mem:read_i16(adr + 0x02)
-basey = mem:read_i16(adr + 0x06) - id
+local mathx = (mem:read_i16(adr))
+local mathy = (mem:read_i16(adr + 0x04))
+
+local basex = mem:read_i16(adr + 0x02)
+local basey = mem:read_i16(adr + 0x06) - id
 
 
-x1 = (basex-mathx)/0x80
-y1 = (basey-mathy)/0x80
+local x1 = (basex-mathx)/0x80
+local y1 = (basey-mathy)/0x80
 
-x2 = (basex+mathx)/0x80
-y2 = (basey+mathy)/0x80
+local x2 = (basex+mathx)/0x80
+local y2 = (basey+mathy)/0x80
 
 if mathx ~= 0 then
 gui:draw_box(x+x1,y+y1,x+x2,y+y2,0,colortable[id+1])
