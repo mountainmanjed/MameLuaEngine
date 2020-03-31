@@ -1,3 +1,5 @@
+--for Street Fighter Alpha 3 cps2
+
 cpu = manager:machine().devices[":maincpu"]
 mem = cpu.spaces["program"]
 gui = manager:machine().screens[":screen"]
