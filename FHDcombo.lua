@@ -1,4 +1,5 @@
 --Was exploring damage calculation and seen it would be easy to hack up a combo counter
+--Mame Version 0.230
 
 cpu = manager.machine.devices[":maincpu"]
 mem = cpu.spaces["program"]
