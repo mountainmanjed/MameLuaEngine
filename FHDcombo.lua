@@ -6,7 +6,8 @@ mem = cpu.spaces["program"]
 gui = manager.machine.screens[":screen"]
 rom = manager.machine.memory.regions[":cslot1:maincpu"]
 
-	textbox = {"No ","Yes"}
+music = 0
+textbox = {"No ","Yes"}
 
 --Combo Counter hack
 --turn hit counter into combo counter
@@ -29,6 +30,26 @@ rom:write_u16(0x80004,0x00bc)
 rom:write_u16(0x80006,0x4268)
 rom:write_u16(0x80008,0x0114)
 rom:write_u16(0x8000a,0x4e75)
+
+if music ~= 1 then
+	rom:write_u32(0x949a,0)
+	rom:write_u32(0x949e,0)
+	rom:write_u32(0x94a2,0)
+	rom:write_u8(0x94a6,0)
+	rom:write_u8(0x94a7,0)
+	rom:write_u32(0x94a8,0)
+	rom:write_u32(0x94ac,0)
+	rom:write_u32(0x94b0,0)
+	else
+	rom:write_u32(0x949a,0x1718191a)
+	rom:write_u32(0x949e,0x1b1c1d1e)
+	rom:write_u32(0x94a2,0x1f202122)
+	rom:write_u8(0x94a6,0x23)
+	rom:write_u8(0x94a7,0x0a)
+	rom:write_u32(0x94a8,0x0b0c0d0e)
+	rom:write_u32(0x94ac,0x0f101112)
+	rom:write_u32(0x94b0,0x13141516)
+end
 
 function combobox(cx,cy,counter,spec_f,norm_f)
 	if counter >= 2 then
