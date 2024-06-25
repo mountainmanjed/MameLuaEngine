@@ -82,7 +82,7 @@ function player(addr,x,y,color1)
 
 
 --math section
-	local use_x = plx-cam_x
+	local use_x = (plx-cam_x)+16
 	local use_y = (cam_y-ply)+(236*cpsy)--224
 	local xflip = (-1)^(plflip&1)
 
