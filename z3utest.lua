@@ -4,7 +4,6 @@ gui = manager.machine.screens[":screen"]
 
 --[[
 To Do / Problems
-	Scaling needs fixed
 	Find Projectiles
 	Needs frame Delay to match up
 	Throw boxes
